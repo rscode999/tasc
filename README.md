@@ -1,4 +1,4 @@
-# TAS (Tensor Autograd System)  
+# TASC (Tensor Autograd System for C++)  
 *CNet 2.0*  
 **C++ framework for neural networks**
 

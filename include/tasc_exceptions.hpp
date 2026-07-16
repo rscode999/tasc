@@ -1,11 +1,11 @@
-#ifndef TAS_EXCEPTIONS_
-#define TAS_EXCEPTIONS_
+#ifndef TASC_EXCEPTIONS_
+#define TASC_EXCEPTIONS_
 
 #include <stdexcept>
 #include <string>
 
 
-namespace tas {
+namespace tasc {
 
 
 

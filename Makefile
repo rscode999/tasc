@@ -5,4 +5,4 @@ XTL_PATH='lib/xtl/include/'
 XTENSOR_BLAS_PATH='lib/xtensor-blas/include'
 
 c:
-	g++ ${MAIN}  -o ${OUTPUT_EXECUTABLE_NAME}  -I ${XTENSOR_PATH} -I ${XTL_PATH} -I ${XTENSOR_BLAS_PATH}
+	g++ ${MAIN}  -o ${OUTPUT_EXECUTABLE_NAME} --std=c++20  -I ${XTENSOR_PATH} -I ${XTL_PATH} -I ${XTENSOR_BLAS_PATH}

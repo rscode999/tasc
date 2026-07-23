@@ -1,0 +1,101 @@
+#ifndef CAST_LOSS_CALCULATOR_
+#define CAST_LOSS_CALCULATOR_
+
+#include <cassert>
+#include <string>
+#include <xtensor/containers/xarray.hpp>
+#include "cast_exceptions.hpp"
+
+namespace cast {
+
+
+
+
+/**
+ * Computes loss, the error between the expected and predicted network outputs
+ */
+class LossCalculator {
+public:
+
+    /**
+     * Creates a new LossCalculator
+     */
+    LossCalculator() = default;
+
+
+    /**
+     * @return the calculator's identifying string. Defaults to "loss_calculator" if not overridden by an implementing class.
+     */
+    virtual std::string name() {
+        return "loss_calculator";
+    }
+
+    /**
+     * Returns the loss between `predicted` and `expected`, as computed by this calculator.
+     * @param predicted network's predictions for a given input
+     * @param expected what the network should have predicted for the input
+     * @return loss of `predicted` and `expected`
+     */
+    virtual double compute(xt::xarray<double> predicted, xt::xarray<double> expected) const = 0;
+
+    /**
+     * Returns the tensor-valued gradient of the loss, between `predicted` and `expected`, as computed by this calcuator.
+     * @param predicted network's predictions for a given input
+     * @param expected what the network should have predicted for the input
+     * @return gradient of the loss between `predicted` and `expected`
+     */
+    virtual xt::xarray<double> compute_gradient(xt::xarray<double> predicted, xt::xarray<double> expected) const = 0;
+
+};
+
+
+
+/**
+ * Calculates Mean Squared Error loss.
+ *
+ * For each element in the output, MSE subtracts corresponding elements of the predicted and actual loss,
+ * then squares the difference. The loss is the sum of the squared differences, divided by the number of 
+ * elements in the input, divided by 2.
+ */
+class MeanSquaredError : public LossCalculator {
+public:
+
+    /**
+     * @return the string "mean_squared_error"
+     */
+    std::string name() override {
+        return "mean_squared_error";
+    }
+
+    /**
+     * Returns the computed Mean Squared Error loss between `predicted` and `expected`.
+     * @param predicted model's predictions for a given input. Precondition: Non-empty
+     * @param expected what the model should have predicted for a given input. Precondition: Has the same number of elements as `predicted`
+     * @return MSE loss between `predicted` and `expected`.
+     */
+    double compute(xt::xarray<double> predicted, xt::xarray<double> expected) const override {
+        assert(predicted.size() > 0 && "Predicted input must be non-empty");
+        assert(predicted.size() == expected.size() && "Number of elements in predicted and expected must match");
+
+        double sum_sq = xt::sum(xt::square(predicted - expected)) ();
+        return sum_sq / (2.0 * static_cast<double>(predicted.size()));
+    }
+
+    /**
+     * Returns the gradient of MSE loss between `predicted` and `expected`.
+     * @param predicted model's predictions for a given input. Precondition: Non-empty
+     * @param expected what the model should have predicted for a given input. Precondition: Has the same number of elements as `predicted`
+     * @return gradient of MSE loss between `predicted` and `expected`
+     */
+    xt::xarray<double> compute_gradient(xt::xarray<double> predicted, xt::xarray<double> expected) const override {
+        assert(predicted.size() > 0 && "Predicted input must be non-empty");
+        assert(predicted.size() == expected.size() && "Number of elements in predicted and expected must match");
+        return (predicted - expected) / predicted.size();
+    }
+};
+
+
+
+
+}
+#endif 

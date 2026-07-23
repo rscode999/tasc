@@ -1,14 +1,13 @@
-#ifndef TASC_TENSOR_GRAPH_
-#define TASC_TENSOR_GRAPH_
+#ifndef CAST_TENSOR_GRAPH_
+#define CAST_TENSOR_GRAPH_
 
 
-#include <cstdint>
 #include <memory>
 #include <xtensor/containers/xarray.hpp>
 #include <xtensor/io/xio.hpp>
 
 
-namespace tasc {
+namespace cast {
 
 
 
@@ -106,11 +105,6 @@ public: //normally protected
     std::vector<std::shared_ptr<TensorNode>> predecessors_ = {};
 
     /**
-     * Pointers to all tensors that are the direct result of this operation
-     */
-    std::vector<std::weak_ptr<TensorNode>> successors_ = {}; //Must use weak pointers, to avoid dependency traps
-
-    /**
      * Private constructor
      */
     TensorOperator() = default;
@@ -120,7 +114,6 @@ public:
 
     /**
      * Returns a shared pointer to a tensor node, representing the output of this operator.
-     * 
      * The node given to this method is registered as a predecessor to this operator.
      */
     std::shared_ptr<TensorNode> compute_and_link(std::shared_ptr<TensorNode> input_node);
@@ -142,13 +135,17 @@ public:
 
     /**
      * Returns the result of this operation on `input`.
-     * 
-     * This method does not create, destroy, or modify any other objects.
-     * 
      * @param input tensor to compute this operation on
      * @return result of this operator on `input`
      */
-    virtual xt::xarray<double> compute(xt::xarray<double> input) = 0;
+    virtual xt::xarray<double> compute(xt::xarray<double> input) const = 0;
+
+    /**
+     * Returns the result of computing a backwards pass, using this operation, on `input`.
+     * @param input tensor to compute a backwards operation on
+     * @return result of the backwards pass on `input`
+     */
+    virtual xt::xarray<double> compute_backwards_pass(xt::xarray<double> input) const = 0;
 
     /**
      * @return identifying string of this operator
@@ -255,17 +252,6 @@ std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>&
     output_stream << "predecessor nodes:\n";
     for(const std::shared_ptr<TensorNode>& node_ptr : op.predecessors_) {
         output_stream << node_ptr->data_ << '\n';
-    }
-    output_stream << "successor nodes:\n";
-    for(const std::weak_ptr<TensorNode>& node_ptr : op.successors_) {
-        //lock() temporarily converts the weak pointer into a shared pointer, so it can be dereferenced
-        if(std::shared_ptr<TensorNode> node_shared = node_ptr.lock()) {
-            output_stream << node_shared->data_ << '\n';
-        }
-        //if dereferencing fails, print error
-        else {
-            output_stream << "(This successor node has been deallocated)" << '\n';
-        }
     }
     return output_stream;
 }

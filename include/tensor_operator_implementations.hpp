@@ -1,66 +1,73 @@
-#ifndef TASC_TENSOR_OPERATOR_
-#define TASC_TENSOR_OPERATOR_
+#ifndef CAST_TENSOR_OPERATOR_
+#define CAST_TENSOR_OPERATOR_
 
-
-#include <memory>
-#include <string>
-#include <vector>
 #include "tensor_graph_base.hpp"
+#include "cast_exceptions.hpp"
+#include <xtensor/containers/xarray.hpp>
+#include <xtensor/generators/xrandom.hpp>
+#include <xtensor-blas/xlinalg.hpp>
+#include <cassert>
+#include <cstdint>
 
 
-namespace tasc {
+namespace cast {
 
     
 
 
 
 
-/**
- * Temporary operator that adds 1 to each element of its input
- */
-class Increment : public TensorOperator {
+class Linear1d : public TensorOperator {
+private:
+    /**
+    * Required size of input vectors
+    */
+    int32_t input_dimension_;
+
+    /**
+    * Size of vectors coming from the linear forward operation
+    */
+    int32_t output_dimension_;
+    
+    /**
+    * 2d weight matrix
+    */
+    xt::xarray<double> weights_;
+
+    /**
+    * 1d bias vector
+    */
+    xt::xarray<double> biases_;
+
+    /**
+    * Value from this layer's output
+    */
+    xt::xarray<double> stored_output_;
+
 public:
     /**
-     * Adds 1 to each element of `input`.
-     */
-    xt::xarray<double> compute(xt::xarray<double> input) override {
-        xt::xarray<double> out = input;
-        for(double& i : out) {
-            i += 1;
-        }
-        return out;
+    * Creates a 1d linear layer with `input_dimension` inputs and `output_dimension` outputs
+    * @param input_dimension required size of input vectors. Precondition: Positive
+    * @param output_dimension size of output vectors. Precondition: Positive
+    */
+    Linear1d(int32_t input_dimension, int32_t output_dimension) : input_dimension_(input_dimension), output_dimension_(output_dimension) {
+        assert(input_dimension > 0);
+        assert(output_dimension > 0);
+        weights_ = xt::random::randn<double>({output_dimension, input_dimension}, 0, 1);
+        biases_ = xt::random::randn<double>({output_dimension}, 0, 1);
     }
 
     /**
-     * @return the string "increment"
-     */
-    std::string name() override {
-        return "increment";
-    }
-};
-
-
-/**
- * Multiplies each element of its input by 2
- */
-class TimesTwo : public TensorOperator {
-public:
-    /**
-     * Multiplies each element of `input` by 2.
-     */
-    xt::xarray<double> compute(xt::xarray<double> input) override {
-        xt::xarray<double> out = input;
-        for(double& i : out) {
-            i *= 2;
-        }
-        return out;
+    * Returns the result of the forward pass on 
+    */
+    xt::xarray<double> compute(xt::xarray<double> input) const override {
+        assert(input.dimension() == 1 && "Input must be a vector");
+        assert(input.size() == input_dimension_ && "Input tensor must have dimension matching the layer's input dimension");
+        return xt::linalg::dot(weights_, input) + biases_;
     }
 
-    /**
-     * @return the string "add_five"
-     */
-    std::string name() override {
-        return "add_five";
+    xt::xarray<double> compute_backwards_pass(xt::xarray<double> input) const override {
+        throw not_implemented();
     }
 };
 

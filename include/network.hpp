@@ -1,19 +1,17 @@
-#ifndef TASC_NETWORK_
-#define TASC_NETWORK_
+#ifndef CAST_NETWORK_
+#define CAST_NETWORK_
 
 
-#include <cstdint>
 #include <memory>
 #include <iostream>
-#include <unordered_map>
 #include <xtensor/containers/xarray.hpp>
-#include <xtensor-blas/xlinalg.hpp>
 
-#include "tasc_exceptions.hpp"
-#include "tensor_operator_implementations.hpp"
+#include "cast_exceptions.hpp"
+#include "loss_calculator.hpp"
+#include "tensor_graph_base.hpp"
 
 
-namespace tasc {
+namespace cast {
 
 
 
@@ -51,9 +49,16 @@ public: //normally private
     std::vector<std::shared_ptr<TensorOperator>> operators_;
 
     /**
-     * Holds the first tensor given to this network
+     * Holds the tensor first given to this network
      */
     std::shared_ptr<TensorNode> initial_input_;
+
+ 
+    /**
+     * Loss metric used by this network
+     */
+    std::shared_ptr<LossCalculator> loss_calc_;
+
 
 public:
     /**
@@ -68,6 +73,22 @@ public:
     void add_operator(std::shared_ptr<TensorOperator> op) {
         operators_.push_back(op);
     }
+
+    /**
+     * Sets this network's loss calculator to `calc`.
+     * @param calc new loss calculator to use
+     */
+    void set_loss_calculator(std::shared_ptr<LossCalculator> calc) {
+        //Reset the loss calculator if it exists
+        if(loss_calc_) {
+            loss_calc_.reset();
+        }
+
+        //Create deep pointer of the new calculator (OK for now- LossCalculators have no internal state)
+        loss_calc_ = calc;
+    }
+
+
 
     /**
      * Returns the result of the network's forward pass on `input`
@@ -87,6 +108,18 @@ public:
         }
 
         return current_node->data();
+    }
+
+    /**
+     * Computes the backward pass, initially using `predicted` and `expected`.
+     * @param predicted network's prediction for a given input
+     * @param expected what the network should have predicted for the input
+     */
+    void backward(xt::xarray<double> predicted, xt::xarray<double> expected) {
+        xt::xarray<double> loss = loss_calc_->compute_gradient(predicted, expected);
+
+        //Pass the loss backwards through each operator
+        throw not_implemented();
     }
 
     /**

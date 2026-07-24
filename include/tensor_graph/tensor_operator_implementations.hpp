@@ -1,11 +1,13 @@
-#ifndef CAST_TENSOR_OPERATOR_
-#define CAST_TENSOR_OPERATOR_
+#ifndef CAST_TENSOR_OPERATOR_IMPLEMENTATIONS_
+#define CAST_TENSOR_OPERATOR_IMPLEMENTATIONS_
 
-#include "tensor_graph_base.hpp"
-#include "cast_exceptions.hpp"
+#include "tensor_operator.hpp"
+#include "../cast_exceptions.hpp"
+
 #include <xtensor/containers/xarray.hpp>
 #include <xtensor/generators/xrandom.hpp>
 #include <xtensor-blas/xlinalg.hpp>
+
 #include <cassert>
 #include <cstdint>
 
@@ -16,7 +18,9 @@ namespace cast {
 
 
 
-
+/**
+* Performs a fully-connected dense linear operation on 1d vectors. Produces a 1d vector.
+*/
 class Linear1d : public TensorOperator {
 private:
     /**
@@ -39,10 +43,6 @@ private:
     */
     xt::xarray<double> biases_;
 
-    /**
-    * Value from this layer's output
-    */
-    xt::xarray<double> stored_output_;
 
 public:
     /**
@@ -58,7 +58,7 @@ public:
     }
 
     /**
-    * Returns the result of the forward pass on 
+    * Returns the result of the forward pass on its input
     */
     xt::xarray<double> compute(xt::xarray<double> input) const override {
         assert(input.dimension() == 1 && "Input must be a vector");

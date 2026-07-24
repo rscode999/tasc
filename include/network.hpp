@@ -2,13 +2,13 @@
 #define CAST_NETWORK_
 
 
-#include <memory>
-#include <iostream>
-#include <xtensor/containers/xarray.hpp>
-
 #include "cast_exceptions.hpp"
 #include "loss_calculator.hpp"
-#include "tensor_graph_base.hpp"
+#include "tensor_graph/tensor_graph.hpp"
+
+#include <memory>
+#include <xtensor/containers/xarray.hpp>
+
 
 
 namespace cast {
@@ -51,7 +51,7 @@ public: //normally private
     /**
      * Holds the tensor first given to this network
      */
-    std::shared_ptr<TensorNode> initial_input_;
+    std::shared_ptr<Tensor> initial_input_;
 
  
     /**
@@ -98,10 +98,10 @@ public:
      */
     xt::xarray<double> forward(xt::xarray<double> input) override {
         //Anchor the forward pass tensors by saving the input
-        initial_input_ = std::make_shared<TensorNode>(input);
+        initial_input_ = std::make_shared<Tensor>(input);
 
         //Cycle the input through the operators
-        std::shared_ptr<TensorNode> current_node = initial_input_;
+        std::shared_ptr<Tensor> current_node = initial_input_;
         for(const std::shared_ptr<TensorOperator>& op : operators_) {
             //Each operator creates and saves a shared pointer to its intermediate output
             current_node = op->compute_and_link(current_node);
@@ -122,26 +122,7 @@ public:
         throw not_implemented();
     }
 
-    /**
-     * Exports `net` to the output stream `output_stream`, returning `output_stream` with `net` inside
-     * @param output_stream stream to export the network to
-     * @param net network object to export
-     * @return `output_stream` with `net`
-     */
-    template<typename CharT, typename Traits>
-    friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& output_stream, const Network& net);
-    
 };
-
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& output_stream, const Network& net) {
-    for(std::shared_ptr<TensorOperator> op_ptr : net.operators_) {
-        output_stream << op_ptr->name() << '\n';
-    }
-
-    return output_stream;
-}
 
 
 
